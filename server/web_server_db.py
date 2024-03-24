@@ -229,13 +229,8 @@ async def process_form():
 async def get_relevance_ranked():
     # Fetch relevance_ranked asynchronously
     wikilink = request.args.get('wikilink', '')
-    check = request.args.get('check', '')
-    #print("check:", check)
     # Extract page name from the URL
     page_name = urlparse(wikilink).path.split('/')[-1]
-
-    if check == '0':
-        return jsonify({'relevance_ranked': ''})
 
     # Check if data exists in the database
     relevance_ranked = check_database(page_name, 'relevance_ranked')

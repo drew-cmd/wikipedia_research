@@ -33,24 +33,26 @@ document.addEventListener('DOMContentLoaded', function() {
           // Update the responseDiv with the initial content
           responseDiv.innerHTML = data.content;
 
-          // Make another AJAX request to fetch relevance_ranked data
-          fetch('http://localhost:8000/server/get_relevance_ranked?' + queryString, {
-              method: 'GET',
-          })
-          .then(function(response) {
-              if (!response.ok) {
-                  throw new Error('Network response was not ok');
-              }
-              return response.json();
-          })
-          .then(function(data) {
-              // Update the responseDiv with the relevance_ranked data
-              responseDiv.innerHTML += data.relevance_ranked;
-          })
-          .catch(function(error) {
-              console.error('There was a problem fetching relevance-ranked data:', error);
-              responseDiv.innerHTML += 'An error occurred while fetching relevance-ranked data.';
-          });
+          if (checkValue == 1) {
+            // Make another AJAX request to fetch relevance_ranked data
+            fetch('http://localhost:8000/server/get_relevance_ranked?' + queryString, {
+            method: 'GET',
+            })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                // Update the responseDiv with the relevance_ranked data
+                responseDiv.innerHTML += data.relevance_ranked;
+            })
+            .catch(function(error) {
+                console.error('There was a problem fetching relevance-ranked data:', error);
+                responseDiv.innerHTML += 'An error occurred while fetching relevance-ranked data.';
+            });
+          }
       })
       .catch(function(error) {
           console.error('There was a problem submitting the form:', error);
