@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wikipedia Research</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1 class="page-title">Wikipedia Research</h1>
+    
+    <p>
+      Entering a valid Wikipedia link will return a summarization of the content of that Wikipedia page along with a list of references and internal wiki links that are present on that Wikipedia page.
+    </p>
+    
+    <form id="wikiForm">
+        <div>
+            <label for="radioYes" for="radioNo">
+                Return internal wiki links and their relevance to the article? (to be displayed at end of page):
+            </label>
+            <input type="radio" id="radioYes" name="check" value="1">
+            <label for="radioYes">Yes</label>
+            <input type="radio" id="radioNo" name="check" value="0" checked>
+            <label for="radioNo">No</label>
+        </div>
+        
+        <div class="wikilink-question">
+            <label for="wikilink">Enter a valid Wikipedia link:</label>
+            <input type="text" id="wikilink" name="wikilink" required>
+            <button type="submit" id="submitBtn">Submit</button> 
+        </div>
+    </form>
+    
+    <div id="response"></div>
+    
+    <!-- Scripts -->
+    <script src="/dynamic/index.js"></script>
+</body>
+</html>

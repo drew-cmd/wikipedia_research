@@ -1,0 +1,21 @@
+.page-title {
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+}
+
+.wikilink-question {
+  padding-top: 10px;
+  padding-bottom: 20px;
+}
+
+.title {
+  justify-content: center;
+  text-align: center;
+  size: 15px;
+  padding-bottom: 10px;
+}
+
+body {
+  padding-bottom: 60px;
+}
