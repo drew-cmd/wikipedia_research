@@ -25,7 +25,7 @@ def initialize_database():
     try:
         with sqlite3.connect(DATABASE) as db:
             cursor = db.cursor()
-            cursor.execute('CREATE TABLE IF NOT EXISTS wiki_data (wikilink TEXT PRIMARY KEY, page_name TEXT, content TEXT, relevance_ranked TEXT)')
+            cursor.execute('CREATE TABLE IF NOT EXISTS wiki_data (wikilink TEXT PRIMARY KEY, page_name TEXT, content TEXT, internal_wikis TEXT, relevance_ranked TEXT)')
     except sqlite3.Error as e:
         logger.error(f"Error initializing database: {e}")
 
@@ -41,7 +41,7 @@ def check_database(page_name, check):
         logger.error(f"Error checking database: {e}")
         return None
 
-async def save_to_database_async(wikilink, page_name, content, relevance_ranked):
+async def save_to_database_async(wikilink, page_name, content, internal_wikis, relevance_ranked):
     try:
         logger.info(f"Saving data to database: {wikilink}, {page_name}")
         async with aiosqlite.connect(DATABASE) as db:
@@ -54,8 +54,8 @@ async def save_to_database_async(wikilink, page_name, content, relevance_ranked)
                 await db.execute('UPDATE wiki_data SET relevance_ranked = ? WHERE page_name = ?', (relevance_ranked, page_name))
             else:
                 # Row doesn't exist, insert a new row
-                await db.execute('INSERT INTO wiki_data (wikilink, page_name, content, relevance_ranked) VALUES (?, ?, ?, ?)',
-                                 (wikilink, page_name, content, relevance_ranked))
+                await db.execute('INSERT INTO wiki_data (wikilink, page_name, content, internal_wikis, relevance_ranked) VALUES (?, ?, ?, ?, ?)',
+                                 (wikilink, page_name, content, internal_wikis, relevance_ranked))
             
             await db.commit()  # Commit changes to the database
         logger.info("Data saved successfully")
@@ -83,7 +83,7 @@ async def webScrapingAPI(wikilink, internal_wikis):
             max_tokens=3000,
             messages=[
                 {"role": "user",
-                "content": "Original: " + wikilink + ". Can you rank the following list of internal wiki links in order from greatest to least relevance (and assign points from 1 - 10, 10 being the most) to the Original wikilink. Please output the result in a list called relevance_ranked. Ex: relevance_ranked = [\n (\"/wiki/Normandy\", 10),\n (\"/wiki/Normandy_(administrative_region)\", 9),\n (\"/wiki/France\", 8), (\"/wiki/Duchy_of_Normandy\", 7),\n (\"/wiki/Norman_language\", 6),\n (\"/wiki/Rouen\", 5),\n (\"/wiki/Caen\", 4),\n (\"/wiki/Flag_of_Normandy\", 3),\n (\"/wiki/Coat_of_arms_of_Normandy\", 2),\n (\"/wiki/Geographic_coordinate_system\", 1)]. Internal Wikis: " + "{internal_wikis}"
+                "content": "Original: " + wikilink + ". Can you rank the following list of internal wiki links in order from greatest to least relevance (and assign points from 1 - 10, 10 being the most) to the Original wikilink. Please output the result in a list of at least 20 called relevance_ranked. Ex: relevance_ranked = [\n (\"/wiki/Normandy\", 10),\n (\"/wiki/Normandy_(administrative_region)\", 9),\n (\"/wiki/France\", 8), (\"/wiki/Duchy_of_Normandy\", 7),\n (\"/wiki/Norman_language\", 6),\n (\"/wiki/Rouen\", 5),\n (\"/wiki/Caen\", 4),\n (\"/wiki/Flag_of_Normandy\", 3),\n (\"/wiki/Coat_of_arms_of_Normandy\", 2),\n (\"/wiki/Geographic_coordinate_system\", 1)]. Internal Wikis: " + "{internal_wikis}"
                 }
 
             ]
@@ -170,6 +170,7 @@ async def webScraping(wikilink):
                     content = str(soup)
 
                 return content, internal_wikis
+            
     except aiohttp.ClientError as e:
         logger.error(f"Error scraping website: {e}")
         return None, None
@@ -182,9 +183,10 @@ async def checkDbWebScrape(wikilink):
     try:
         # Check if data exists in the database
         content = check_database(page_name, 'content')
+        internal_wikis = check_database(page_name, 'internal_wikis')
         if content:
             logger.info("Data found in the database")
-            return content, ""
+            return content, internal_wikis
         else:
             logger.info("Data not found in the database, scraping website...")
             # Data not found, perform web scraping
@@ -192,7 +194,7 @@ async def checkDbWebScrape(wikilink):
             if content:
                 # Save data to the database
                 logger.info("Saving wikilink, page_name, and content data to database...")
-                await save_to_database_async(wikilink, page_name, content, None)
+                await save_to_database_async(wikilink, page_name, content, str(internal_wikis), None)
             else:
                 logger.error("Failed to retrieve content from Wikipedia")
     except Exception as e:
@@ -207,7 +209,7 @@ CORS(app)  # Initialize Flask-CORS with your Flask application instance
 @app.route('/server/process_form', methods=['GET'])
 async def process_form():
     initialize_database()
-    global start_time, internal_wikis
+    global start_time
     start_time = time.time()  # Record the start time
 
     # Process form data and retrieve initial content
@@ -234,13 +236,14 @@ async def get_relevance_ranked():
 
     # Check if data exists in the database
     relevance_ranked = check_database(page_name, 'relevance_ranked')
+    internal_wikis = check_database(page_name, 'internal_wikis')
 
     if not relevance_ranked:    
         relevance_ranked = await webScrapingAPI(wikilink, internal_wikis)
 
         # Save data to the database
         logger.info("Saving relevance_ranked data to database...")
-        await save_to_database_async(wikilink, page_name, '' , str(relevance_ranked))
+        await save_to_database_async(wikilink, page_name, '', '', str(relevance_ranked))
 
     # Modify the response content to include "Related Internal Links"
     response_content = "<br><h1>Related Internal Links</h1>"
