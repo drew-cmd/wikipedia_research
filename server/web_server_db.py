@@ -83,7 +83,7 @@ async def webScrapingAPI(wikilink, internal_wikis):
             max_tokens=3000,
             messages=[
                 {"role": "user",
-                "content": "Original: " + wikilink + ". Can you rank the following list of internal wiki links in order from greatest to least relevance (and assign points from 1 - 10, 10 being the most) to the Original wikilink. Please output the result in a list of at least 20 called relevance_ranked. Ex: relevance_ranked = [\n (\"/wiki/Normandy\", 10),\n (\"/wiki/Normandy_(administrative_region)\", 9),\n (\"/wiki/France\", 8), (\"/wiki/Duchy_of_Normandy\", 7),\n (\"/wiki/Norman_language\", 6),\n (\"/wiki/Rouen\", 5),\n (\"/wiki/Caen\", 4),\n (\"/wiki/Flag_of_Normandy\", 3),\n (\"/wiki/Coat_of_arms_of_Normandy\", 2),\n (\"/wiki/Geographic_coordinate_system\", 1)]. Internal Wikis: " + "{internal_wikis}"
+                "content": "Original: " + wikilink + ". Can you rank the following list of internal wiki links in order from greatest to least relevance (and assign points from 1 - 10, 10 being the most) to the Original wikilink along with a specific description of your reasoning for ranking them as such. Please output the result in a list of at least 20 called relevance_ranked. Ex: relevance_ranked = [\n (\"/wiki/Normandy\", 10, reasoning),\n (\"/wiki/Normandy_(administrative_region)\", 9, reasoning),\n (\"/wiki/France\", 8, reasoning), (\"/wiki/Duchy_of_Normandy\", 7, reasoning),\n (\"/wiki/Norman_language\", 6, reasoning),\n (\"/wiki/Rouen\", 5, reasoning),\n (\"/wiki/Caen\", 4, reasoning),\n (\"/wiki/Flag_of_Normandy\", 3, reasoning),\n (\"/wiki/Coat_of_arms_of_Normandy\", 2, reasoning),\n (\"/wiki/Geographic_coordinate_system\", 1, reasoning)]. Internal Wikis: " + "{internal_wikis}"
                 }
 
             ]
@@ -95,13 +95,14 @@ async def webScrapingAPI(wikilink, internal_wikis):
         if completion.choices:
             completion_message = completion.choices[0].message
 
-            #print(completion_message.content)
+            #print("completion message content: ", completion_message.content)
 
             # Extract the relevance_ranked list content
             start_index = completion_message.content.find('[')
             end_index = completion_message.content.rfind(']')
             if start_index != -1 and end_index != -1:
                 relevance_ranked_str = completion_message.content[start_index:end_index+1]
+                relevance_ranked_str = relevance_ranked_str.strip()
                 #print("Extracted relevance_ranked_str: ", relevance_ranked_str)
          
                 # Safely evaluate the string as a Python list
@@ -111,19 +112,22 @@ async def webScrapingAPI(wikilink, internal_wikis):
 
                     # Create HTML code for each link and relevance score
                     links_html = ''
-                    for link, relevance_score in relevance_ranked:
+                    for link, relevance_score, reasoning in relevance_ranked:
                         # Extract the link text and format it
                         link_text = link.split('/')[-1].replace('_', ' ')
                         
                         # Generate HTML for the link and relevance score
-                        link_html = f'<a href="https://en.wikipedia.org{link}">{link_text}</a> : {relevance_score}<br>'
+                        link_html = f'<a href="https://en.wikipedia.org{link}">{link_text}</a> : {relevance_score} &emsp; {reasoning}<br>'
                         
                         # Append to the overall HTML code
                         links_html += link_html
 
                     # Print or use the generated HTML code
                     #print("links_html: ", links_html)
-                    return links_html
+                    if links_html:
+                        return links_html
+                    else:
+                        return None
                 
                 except ValueError:
                     print("Invalid relevance_ranked format: could not evaluate as a list.")
@@ -237,16 +241,20 @@ async def get_relevance_ranked():
     # Check if data exists in the database
     relevance_ranked = check_database(page_name, 'relevance_ranked')
     internal_wikis = check_database(page_name, 'internal_wikis')
+    #print(type(relevance_ranked))
 
-    if not relevance_ranked:    
+    if not relevance_ranked or relevance_ranked == str([]):  
         relevance_ranked = await webScrapingAPI(wikilink, internal_wikis)
 
         # Save data to the database
         logger.info("Saving relevance_ranked data to database...")
         await save_to_database_async(wikilink, page_name, '', '', str(relevance_ranked))
 
+    if relevance_ranked == str(None):
+        return ""
+        
     # Modify the response content to include "Related Internal Links"
-    response_content = "<br><h1>Related Internal Links</h1>"
+    response_content = "<br><h1>Related Internal Wiki Links</h1>"
     response_content += relevance_ranked
     
     # Return relevance_ranked data as JSON response with CORS headers
