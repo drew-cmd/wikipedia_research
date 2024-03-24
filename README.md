@@ -38,7 +38,7 @@ Includes JavaScript code which listens to events, passes user input to server, a
 
 #### Server
 
-Includes Python server and database which takes the client request, breaks it up, validates it, checks the page against the database, and web scrapes the Wikipedia page for content if it is not found in the database. The content is then saved to the database along with the wiki link and wiki page name for later quicker retrieval and the web scraped content is returned to the client.
+Includes Python server and database which takes the client request, breaks it up, validates it, checks the page against the database, and web scrapes the Wikipedia page for content if it is not found in the database. The content is then saved to the database along with the wiki link, wiki page name, internal wiki links, and ranked relevance of some of those internal wiki links for later quicker retrieval and the web scraped content is returned to the client.
 
 #### settings.json
 
