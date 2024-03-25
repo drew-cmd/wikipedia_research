@@ -22,7 +22,9 @@ Webscrapes content and internal wiki links from the Wikipedia page.
 
 Saves wiklink, page_name, and content to the database for future, faster retrieval.
 
-If prompted for rankings of internal wiki links, will send prompt to ChatGPT via Python ChatGPT API to rank provided internal wiki links in order of relevance to the user inputted Wikipedia URL.
+If prompted for rankings of internal wiki links, will send prompt to ChatGPT via Python ChatGPT API to rank provided internal wiki links in order of relevance to the user inputted Wikipedia URL. Along with the rankings, the API will also return reasoning behind ranking them as such. 
+
+Example: Gaul : 10   The Franks were a Germanic tribe that inhabited Gaul.
 
 The returned data will then be saved to the appropriate row of the database in the relevance_ranked column.
 
