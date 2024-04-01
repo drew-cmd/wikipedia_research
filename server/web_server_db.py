@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 import sqlite3
 import logging
 import time
-import logging
 import aiosqlite
 from openai import AsyncOpenAI
 from flask import Flask, jsonify, request
